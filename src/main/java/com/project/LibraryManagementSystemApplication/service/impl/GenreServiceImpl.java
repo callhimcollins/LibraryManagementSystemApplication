@@ -1,5 +1,6 @@
 package com.project.LibraryManagementSystemApplication.service.impl;
 
+import com.project.LibraryManagementSystemApplication.mapper.GenreMapper;
 import com.project.LibraryManagementSystemApplication.model.Genre;
 import com.project.LibraryManagementSystemApplication.payload.dto.GenreDto;
 import com.project.LibraryManagementSystemApplication.repository.GenreRepository;
@@ -7,12 +8,14 @@ import com.project.LibraryManagementSystemApplication.service.GenreService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 public class GenreServiceImpl implements GenreService {
 
     public final GenreRepository genreRepository;
-
 
 
     @Override
@@ -32,30 +35,18 @@ public class GenreServiceImpl implements GenreService {
         }
         Genre savedGenre = genreRepository.save(genre);
 
-        GenreDto dto = GenreDto.builder()
-                .id(savedGenre.getId())
-                .name(savedGenre.getName())
-                .description(savedGenre.getDescription())
-                .displayOrder(savedGenre.getDisplayOrder())
-                .active(savedGenre.getActive())
-                .createdDate(savedGenre.getCreatedAt())
-                .updatedAt(savedGenre.getUpdatedAt())
-                .build();
-
-        if(savedGenre.getParentGenre() != null) {
-            dto.setParentGenreId(savedGenre.getParentGenre().getId());
-            dto.setParentGenreName(savedGenre.getParentGenre().getName());
-        }
-
-//        dto.setSubGenre(savedGenre
-//                .getSubGenres()
-//                .stream()
-//                .filter(subGenre -> subGenre.getActive())
-//                .map(subGenre -> )
-//        );
-
+        GenreDto dto = GenreMapper.toDto(savedGenre);
 
         return dto;
+    }
+
+    @Override
+    public List<GenreDto> getAllGenres() {
+        return genreRepository
+                .findAll()
+                .stream()
+                .map(genre -> GenreMapper.toDto(genre))
+                .collect(Collectors.toList());
     }
 
 }

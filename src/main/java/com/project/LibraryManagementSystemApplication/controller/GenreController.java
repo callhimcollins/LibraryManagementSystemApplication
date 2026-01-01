@@ -5,10 +5,9 @@ import com.project.LibraryManagementSystemApplication.payload.dto.GenreDto;
 import com.project.LibraryManagementSystemApplication.service.GenreService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -21,5 +20,11 @@ public class GenreController {
     public ResponseEntity<GenreDto> createGenre(@RequestBody GenreDto genreDto) {
         GenreDto createdGenreDto = genreService.createGenre(genreDto);
         return ResponseEntity.ok(createdGenreDto);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<GenreDto>> getAllGenres() {
+        List<GenreDto> genres = genreService.getAllGenres();
+        return ResponseEntity.ok(genres);
     }
 }
