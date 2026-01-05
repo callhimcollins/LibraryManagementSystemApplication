@@ -1,5 +1,6 @@
 package com.project.LibraryManagementSystemApplication.service.impl;
 
+import com.project.LibraryManagementSystemApplication.exception.GenreException;
 import com.project.LibraryManagementSystemApplication.mapper.GenreMapper;
 import com.project.LibraryManagementSystemApplication.model.Genre;
 import com.project.LibraryManagementSystemApplication.payload.dto.GenreDto;
@@ -15,29 +16,15 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class GenreServiceImpl implements GenreService {
 
-    public final GenreRepository genreRepository;
-
+    private final GenreRepository genreRepository;
+    private final GenreMapper genreMapper;
 
     @Override
     public GenreDto createGenre(GenreDto genreDto) {
-        Genre genre = Genre
-                .builder()
-                .code(genreDto.getCode())
-                .name(genreDto.getName())
-                .description(genreDto.getDescription())
-                .displayOrder(genreDto.getDisplayOrder())
-                .active(true)
-                .build();
-
-        if(genreDto.getParentGenreId() != null) {
-            Genre parentGenre = genreRepository.findById(genreDto.getParentGenreId()).get();
-            genre.setParentGenre(parentGenre);
-        }
+        Genre genre = genreMapper.toEntity(genreDto);
         Genre savedGenre = genreRepository.save(genre);
 
-        GenreDto dto = GenreMapper.toDto(savedGenre);
-
-        return dto;
+        return genreMapper.toDto(savedGenre);
     }
 
     @Override
@@ -45,8 +32,74 @@ public class GenreServiceImpl implements GenreService {
         return genreRepository
                 .findAll()
                 .stream()
-                .map(genre -> GenreMapper.toDto(genre))
+                .map(genre -> genreMapper.toDto(genre))
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public GenreDto getGenreById(Long genreId) throws GenreException {
+        Genre genre = genreRepository.findById(genreId)
+                .orElseThrow(
+                        () -> new GenreException("Genre not found")
+                );
+        return genreMapper.toDto(genre);
+    }
+
+    @Override
+    public GenreDto updateGenre(Long genreId, GenreDto genreDto) throws GenreException {
+        Genre existingGenre = genreRepository.findById(genreId)
+                .orElseThrow(
+                        () -> new GenreException("Genre not found")
+                );
+
+        genreMapper.updateEntityFromDto(genreDto, existingGenre);
+        Genre updatedGenre = genreRepository.save(existingGenre);
+
+        return genreMapper.toDto(updatedGenre);
+    }
+
+    @Override
+    public void deleteGenre(Long genreId) throws GenreException {
+        Genre existingGenre = genreRepository.findById(genreId)
+                .orElseThrow(
+                        () -> new GenreException("Genre not found")
+                );
+        existingGenre.setActive(false);
+        genreRepository.save(existingGenre);
+    }
+
+    @Override
+    public void hardDeleteGenre(Long genreId) throws GenreException {
+        Genre existingGenre = genreRepository.findById(genreId)
+                .orElseThrow(
+                        () -> new GenreException("Genre not found")
+                );
+        genreRepository.delete(existingGenre);
+    }
+
+    @Override
+    public List<GenreDto> getAllActiveGenresWithSubGenres() {
+        List<Genre> topLevelGenres=genreRepository
+                .findByParentGenreIsNullAndActiveTrueOrderByDisplayOrderAsc();
+
+        return genreMapper.toDtoList(topLevelGenres);
+    }
+
+    @Override
+    public List<GenreDto> getTopLevelGenres() {
+        List<Genre> topLevelGenres=genreRepository
+                .findByParentGenreIsNullAndActiveTrueOrderByDisplayOrderAsc();
+
+        return genreMapper.toDtoList(topLevelGenres);
+    }
+
+    @Override
+    public long getTotalActiveGenres() {
+        return genreRepository.countByActiveTrue();
+    }
+
+    @Override
+    public long getBookCountByGenre(Long genreId) {
+        return 0;
+    }
 }
