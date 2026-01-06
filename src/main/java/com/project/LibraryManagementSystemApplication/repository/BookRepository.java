@@ -11,15 +11,15 @@ import java.util.Optional;
 
 public interface BookRepository extends JpaRepository<Book, Long> {
 
-    Optional<Book> findyByIsbn(String isbn);
+    Optional<Book> findByIsbn(String isbn);
     boolean existsByIsbn(String isbn);
 
     @Query(
             "select b from Book b where" +
-            ":searchTerm is null OR "+
+            "(:searchTerm is null OR "+
             "lower(b.title) like lower(concat('%', :searchTerm, '%')) OR "+
             "lower(b.author) like lower(concat('%', :searchTerm, '%')) OR "+
-            "lower(b.isbn) like lower(concat('%', :searchTerm, '%')) OR "+
+            "lower(b.isbn) like lower(concat('%', :searchTerm, '%'))) AND "+
             "(:genreId is null or b.genre.id=:genreId) AND " +
             "(:availableOnly = false OR b.availableCopies>0) AND " +
             "b.active=true"

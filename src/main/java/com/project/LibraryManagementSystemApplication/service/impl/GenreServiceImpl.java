@@ -32,7 +32,7 @@ public class GenreServiceImpl implements GenreService {
         return genreRepository
                 .findAll()
                 .stream()
-                .map(genre -> genreMapper.toDto(genre))
+                .map(genreMapper::toDto)
                 .collect(Collectors.toList());
     }
 
