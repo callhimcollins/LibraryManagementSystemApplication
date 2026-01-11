@@ -44,6 +44,7 @@ public class BookMapper {
     }
 
 
+    // This is to convert to original database form after getting data from user in dto form to be saved in DB
     public Book toBookEntity(BookDto dto) throws BookException {
         if(dto == null) {
             return null;
@@ -52,51 +53,25 @@ public class BookMapper {
         Book book = new Book();
         book.setId(dto.getId());
         book.setIsbn(dto.getIsbn());
-
-        // Map genre - fetch from database using genreId
-        if(dto.getGenreId() != null) {
-            Genre genre = genreRepository.findById(dto.getGenreId())
-                    .orElseThrow(
-                            () -> new BookException(
-                                    "Genre with ID " + dto.getGenreId() + " not found"
-                            )
-                    );
-
-            book.setGenre(genre);
-        }
-
-
-        getAndSetFields(dto, book);
         book.setActive(true);
-
+        getAndSetFields(dto, book);
         return book;
     }
 
+    // This is to update database object using dto info provided by user
     public void updateEntityFromDto(BookDto dto, Book book) throws BookException {
         if (dto == null || book == null) {
             return;
         }
-
         // ISBN should not be updated
-
-        // Update genre if provided
-        if(dto.getGenreId() != null) {
-            Genre genre = genreRepository.findById(dto.getGenreId()).orElseThrow(
-                    () -> new BookException("Genre with ID " + dto.getGenreId() + " not found")
-            );
-
-            book.setGenre(genre);
-        }
-
         getAndSetFields(dto, book);
 
         if(dto.getActive() != null) {
             book.setActive(dto.getActive());
         }
-
     }
 
-    private void getAndSetFields(BookDto dto, Book book) {
+    private void getAndSetFields(BookDto dto, Book book) throws BookException {
         book.setAuthor(dto.getAuthor());
         book.setTitle(dto.getTitle());
         book.setPublisher((dto.getPublisher()));
@@ -108,5 +83,14 @@ public class BookMapper {
         book.setAvailableCopies(dto.getAvailableCopies());
         book.setPrice(dto.getPrice());
         book.setCoverImageUrl(dto.getCoverImageUrl());
+
+        // Update genre if provided
+        if(dto.getGenreId() != null) {
+            Genre genre = genreRepository.findById(dto.getGenreId()).orElseThrow(
+                    () -> new BookException("Genre with ID " + dto.getGenreId() + " not found")
+            );
+
+            book.setGenre(genre);
+        }
     }
 }

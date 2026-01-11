@@ -130,7 +130,12 @@ public class BookServiceImpl implements BookService {
         return bookRepository.countAvailableBooks();
     }
 
-    private Pageable createPageable(int currentPage, int size, String sortBy, String sortDirection) {
+    private Pageable createPageable(
+            int currentPage,
+            int size,
+            String sortBy,
+            String sortDirection
+    ) {
         size = Math.min(size, 10);
         size = Math.max(size, 1);
 
