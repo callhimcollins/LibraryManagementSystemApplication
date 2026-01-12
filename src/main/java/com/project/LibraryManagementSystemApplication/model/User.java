@@ -1,20 +1,24 @@
 package com.project.LibraryManagementSystemApplication.model;
 
+import com.project.LibraryManagementSystemApplication.domain.AuthProvider;
+import com.project.LibraryManagementSystemApplication.domain.UserRole;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+
 
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
-@Service
+@Setter
 @Builder
 public class User {
 
@@ -26,7 +30,25 @@ public class User {
 
     private String fullName;
 
-    private String role;
+    private UserRole role;
+
+    private String phone;
+
+    private AuthProvider authProvider=AuthProvider.LOCAL;
+
+    private String googleId;
+
+    private String profileImage;
 
     private String password;
+
+    private LocalDateTime lastLogin;
+
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+
+
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
+
 }
