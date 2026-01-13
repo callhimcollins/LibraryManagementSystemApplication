@@ -12,7 +12,7 @@ public interface AuthService {
     AuthResponse logout();
 
     void createPasswordResetToken(String email) throws UserException;
-    void resetPassword(String token, String newPassword);
+    void resetPassword(String token, String newPassword) throws Exception;
 
 
 }

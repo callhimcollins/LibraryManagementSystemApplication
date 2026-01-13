@@ -4,11 +4,15 @@ import com.project.LibraryManagementSystemApplication.configurations.JwtProvider
 import com.project.LibraryManagementSystemApplication.domain.UserRole;
 import com.project.LibraryManagementSystemApplication.exception.UserException;
 import com.project.LibraryManagementSystemApplication.mapper.UserMapper;
+import com.project.LibraryManagementSystemApplication.model.PasswordResetToken;
 import com.project.LibraryManagementSystemApplication.model.User;
 import com.project.LibraryManagementSystemApplication.payload.dto.UserDto;
 import com.project.LibraryManagementSystemApplication.payload.response.AuthResponse;
+import com.project.LibraryManagementSystemApplication.repository.PasswordResetTokenRepository;
 import com.project.LibraryManagementSystemApplication.repository.UserRepository;
 import com.project.LibraryManagementSystemApplication.service.AuthService;
+import com.project.LibraryManagementSystemApplication.service.EmailService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -18,6 +22,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -28,13 +33,14 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final CustomUserServiceImplementation customUserServiceImplementation;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final EmailService emailService;
 
     @Override
     public AuthResponse login(String username, String password) throws UserException {
         Authentication authentication = authenticate(username, password);
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        assert authentication != null;
         String token = jwtProvider.generateToken(authentication);
 
         User user = userRepository.findByEmail(username);
@@ -53,9 +59,9 @@ public class AuthServiceImpl implements AuthService {
     private Authentication authenticate(String username, String password) throws UserException {
         UserDetails userDetails = customUserServiceImplementation.loadUserByUsername(username);
 
-        if(userDetails == null) {
-            throw new UserException("User Not Found With Email +" +password);
-        }
+//        if(userDetails == null) {
+//            throw new UserException("User Not Found With Email +" +password);
+//        }
 
         if(!passwordEncoder.matches(password, userDetails.getPassword())) {
             throw new UserException("Password Incorrect");
@@ -98,7 +104,7 @@ public class AuthServiceImpl implements AuthService {
         return null;
     }
 
-    @Override
+    @Transactional
     public void createPasswordResetToken(String email) throws UserException {
         User user = userRepository.findByEmail(email);
 
@@ -107,10 +113,39 @@ public class AuthServiceImpl implements AuthService {
         }
 
         String token = UUID.randomUUID().toString();
+        PasswordResetToken resetToken = PasswordResetToken
+                .builder()
+                .token(token)
+                .user(user)
+                .expiryDate(LocalDateTime.now().plusMinutes(5))
+                .build();
+
+        passwordResetTokenRepository.save(resetToken);
+        String frontendUrl="";
+        String resetLink=frontendUrl+token;
+        String subject = "Password Reset Request";
+        String body = "You requested to reset your password. Use this link (valid for 5 minutes): " + resetLink;
+
+
+        // Send Email
+        emailService.sendEmail(user.getEmail(), subject, body);
     }
 
-    @Override
-    public void resetPassword(String token, String newPassword) {
+    @Transactional
+    public void resetPassword(String token, String newPassword) throws Exception {
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
+                .orElseThrow(
+                        () -> new Exception("Invalid Token")
+                );
 
+        if (resetToken.isExpired()) {
+            passwordResetTokenRepository.delete(resetToken);
+            throw new Exception("Token Expired");
+        }
+
+        User user = resetToken.getUser();
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        passwordResetTokenRepository.delete(resetToken);
     }
 }
