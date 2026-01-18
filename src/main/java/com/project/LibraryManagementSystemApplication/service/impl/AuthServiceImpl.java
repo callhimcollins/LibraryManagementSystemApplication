@@ -14,15 +14,16 @@ import com.project.LibraryManagementSystemApplication.service.AuthService;
 import com.project.LibraryManagementSystemApplication.service.EmailService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Bean;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -30,11 +31,16 @@ import java.util.UUID;
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final CustomUserServiceImplementation customUserServiceImplementation;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailService emailService;
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
 
     @Override
     public AuthResponse login(String username, String password) throws UserException {
@@ -63,7 +69,7 @@ public class AuthServiceImpl implements AuthService {
 //            throw new UserException("User Not Found With Email +" +password);
 //        }
 
-        if(!passwordEncoder.matches(password, userDetails.getPassword())) {
+        if(!passwordEncoder().matches(password, userDetails.getPassword())) {
             throw new UserException("Password Incorrect");
         }
 
@@ -80,7 +86,7 @@ public class AuthServiceImpl implements AuthService {
 
         User createdUser = new User();
         createdUser.setEmail(req.getEmail());
-        createdUser.setPassword(passwordEncoder.encode(req.getPassword()));
+        createdUser.setPassword(passwordEncoder().encode(req.getPassword()));
         createdUser.setPhone(req.getPhone());
         createdUser.setFullName(req.getFullName());
         createdUser.setLastLogin(LocalDateTime.now());
@@ -144,7 +150,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         User user = resetToken.getUser();
-        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setPassword(passwordEncoder().encode(newPassword));
         userRepository.save(user);
         passwordResetTokenRepository.delete(resetToken);
     }
