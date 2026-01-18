@@ -42,6 +42,7 @@ public class JwtValidator extends OncePerRequestFilter {
                 String email = String.valueOf(claims.getSubject());
 
                 String authorities = String.valueOf(claims.get("authorities"));
+                if(!authorities.startsWith("ROLE_")) authorities = "ROLE_" + authorities;
 
                 List<GrantedAuthority> authoritiesList = AuthorityUtils.commaSeparatedStringToAuthorityList(authorities);
 
